@@ -1,25 +1,162 @@
-<!doctype html><html lang="sw"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#111827"><link rel="manifest" href="manifest.json"><title>My Money Diary</title><style>*{box-sizing:border-box}body{margin:0;background:#f3f4f6;font-family:Arial;color:#111827;padding-bottom:70px}header{background:#111827;color:#fff;padding:18px}.bal{font-size:28px;font-weight:bold}main{max-width:700px;margin:auto;padding:14px}.card{background:#fff;border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 2px 10px #0001}input,button{width:100%;padding:13px;margin:5px 0;border-radius:10px;border:1px solid #ddd;font-size:16px}button{background:#111827;color:white;border:0;font-weight:bold}.danger{background:#b91c1c}.light{background:#e5e7eb;color:#111}.row,.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}.stat{padding:12px;background:#f9fafb;border-radius:10px}.item{border-top:1px solid #eee;padding:12px 0}.in{color:#15803d}.ex{color:#b91c1c}.small{font-size:13px;color:#666}.hidden{display:none}nav{position:fixed;bottom:0;left:0;right:0;background:white;display:grid;grid-template-columns:repeat(5,1fr);z-index:5;border-top:1px solid #ddd}nav button{margin:0;background:white;color:#666;border-radius:0;font-size:12px}nav .active{color:#111;font-weight:bold}.lock{position:fixed;inset:0;background:#111827;display:flex;align-items:center;justify-content:center;padding:20px;z-index:99}.lock .card{width:100%;max-width:380px;text-align:center}</style>
-<div id="lock" class="lock hidden"><div class="card"><h2>🔐 My Money Diary</h2><p>Ingiza PIN kufungua app</p><input id="pinIn" type="password" inputmode="numeric" maxlength="6"><button onclick="unlock()">Fungua</button><p id="err" class="small"></p></div></div>
-<div id="app"><header><h2>💰 My Money Diary</h2>Balance<div id="balance" class="bal">TZS 0</div></header><main>
-<section id="home"><div class="card"><h2>➕ Weka rekodi</h2><input id="date" type="date"><div class="row"><input id="income" type="number" placeholder="Mapato TZS"><input id="expense" type="number" placeholder="Matumizi TZS"></div><input id="note" placeholder="Maelezo"><button onclick="add()">Weka Rekodi</button></div>
-<div class="card"><h2>📊 Muhtasari wa mwezi</h2><input id="month" type="month" onchange="render()"><div class="stats"><div class="stat">Mapato<b id="mi">TZS 0</b></div><div class="stat">Matumizi<b id="me">TZS 0</b></div></div><div class="stat">Balance<b id="mb">TZS 0</b></div></div></section>
-<section id="records" class="hidden"><div class="card"><h2>📒 Rekodi</h2><div id="list"></div></div></section>
-<section id="reports" class="hidden"><div class="card"><h2>📈 Ripoti</h2><p id="report"></p><button onclick="csv()">⬇️ Export CSV</button><button class="danger" onclick="wipe()">🗑️ Futa zote</button></div></section>
-<section id="settings" class="hidden"><div class="card"><h2>⚙️ Settings</h2><p class="small">PIN ni lock ya kawaida; si encryption ya kiwango cha benki.</p><input id="newPin" type="password" inputmode="numeric" maxlength="6" placeholder="PIN mpya 4–6 digits"><button onclick="setPin()">🔐 Weka / Badili PIN</button><button class="light" onclick="removePin()">🔓 Ondoa PIN</button><hr><h3>💾 Backup & Restore</h3><button onclick="backup()">⬇️ Backup Data</button><input type="file" accept=".json" onchange="restore(event)"></div></section></main>
-<nav><button class="active" onclick="tab('home',this)">🏠<br>Nyumbani</button><button onclick="tab('records',this)">📒<br>Rekodi</button><button onclick="tab('reports',this)">📈<br>Ripoti</button><button onclick="tab('settings',this)">⚙️<br>Settings</button><button onclick="location.reload()">🔄<br>Refresh</button></nav></div>
-<script>
-const K='my_money_diary_pwa_v1',P='money_diary_pin';let data=JSON.parse(localStorage.getItem(K)||'[]'),fmt=n=>new Intl.NumberFormat('sw-TZ').format(+n||0),d=new Date().toISOString().slice(0,10);date.value=d;month.value=d.slice(0,7);
-function save(){localStorage.setItem(K,JSON.stringify(data))}
-function render(){let I=0,E=0;data.forEach(x=>{I+=+x.income||0;E+=+x.expense||0});balance.textContent='TZS '+fmt(I-E);let m=month.value,a=data.filter(x=>x.date.startsWith(m)),i=0,e=0;a.forEach(x=>{i+=+x.income||0;e+=+x.expense||0});mi.textContent='TZS '+fmt(i);me.textContent='TZS '+fmt(e);mb.textContent='TZS '+fmt(i-e);list.innerHTML=a.slice().sort((x,y)=>y.date.localeCompare(x.date)).map(x=>'<div class="item"><b>'+x.date+'</b><div>'+x.note+'</div><div class="in">Mapato: TZS '+fmt(x.income)+'</div><div class="ex">Matumizi: TZS '+fmt(x.expense)+'</div></div>').join('')||'<p class="small">Hakuna rekodi.</p>';report.innerHTML='Mwezi <b>'+m+'</b>: Mapato TZS '+fmt(i)+', Matumizi TZS '+fmt(e)+', Balance TZS '+fmt(i-e)}
-function add(){let i=+income.value||0,e=+expense.value||0;if(!i&&!e)return alert('Weka kiasi.');data.push({id:Date.now(),date:date.value,income:i,expense:e,note:note.value.trim()});save();income.value=expense.value=note.value='';render();alert('Imehifadhiwa ✅')}
-function tab(id,b){['home','records','reports','settings'].forEach(x=>document.getElementById(x).classList.add('hidden'));document.getElementById(id).classList.remove('hidden');document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');render()}
-function dl(b,n){let a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n;a.click()}
-function backup(){dl(new Blob([JSON.stringify({app:'My Money Diary',version:2,createdAt:new Date().toISOString(),records:data},null,2)],{type:'application/json'}),'money-diary-backup.json')}
-function restore(ev){let r=new FileReader();r.onload=()=>{try{let o=JSON.parse(r.result),a=Array.isArray(o)?o:o.records;if(!Array.isArray(a))throw 1;let m=new Map(data.map(x=>[String(x.id),x]));a.forEach(x=>{if(x&&x.date)m.set(String(x.id||Date.now()+Math.random()),x)});data=[...m.values()];save();render();alert('Backup imerudishwa ✅')}catch(e){alert('Backup si sahihi')}};r.readAsText(ev.target.files[0]);ev.target.value=''}
-function csv(){let s='Tarehe,Maelezo,Mapato,Matumizi,Balance\n';data.forEach(x=>s+=x.date+',"'+(x.note||'').replaceAll('"','""')+'",'+x.income+','+x.expense+','+((x.income||0)-(x.expense||0))+'\n');dl(new Blob([s],{type:'text/csv'}),'money-diary.csv')}
-function wipe(){if(confirm('Futa rekodi zote?')){data=[];save();render()}}
-function setPin(){let x=newPin.value;if(!/^\d{4,6}$/.test(x))return alert('PIN iwe tarakimu 4 hadi 6.');localStorage.setItem(P,x);newPin.value='';alert('PIN imewekwa ✅')}
-function removePin(){let x=localStorage.getItem(P);if(!x)return alert('Hakuna PIN.');if(prompt('PIN ya sasa')===x){localStorage.removeItem(P);alert('PIN imeondolewa ✅')}else alert('PIN si sahihi')}
-function unlock(){if(pinIn.value==='1234'||pinIn.value===localStorage.getItem(P)){lock.classList.add('hidden');app.classList.remove('hidden')}else err.textContent='PIN si sahihi.'}
-if(localStorage.getItem(P)){app.classList.add('hidden');lock.classList.remove('hidden')}render();
-</script></html>
+<!doctype html>
+<html lang="sw">
+ <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#111827">
+  <title>My Money Diary</title>
+  <style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f3f4f6;color:#111827}button,input,textarea,select{font:inherit}button{border:0;border-radius:12px;padding:12px 16px;font-weight:700;cursor:pointer}.primary{background:#111827;color:#fff}.small{background:#e5e7eb;color:#111827}.danger{background:#fee2e2;color:#991b1b}#lock{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#111827;padding:20px}.lockbox{background:#fff;border-radius:24px;padding:28px 20px;width:min(430px,100%);text-align:center}.lockbox input{width:100%;padding:15px;text-align:center;font-size:24px;letter-spacing:7px;border:2px solid #d1d5db;border-radius:14px;margin:12px 0}.lockbox .primary{width:100%}#app{display:none;min-height:100vh;padding-bottom:75px}header{background:#111827;color:white;padding:20px;position:sticky;top:0;z-index:5}header h1{margin:0;font-size:23px}main{max-width:720px;margin:auto;padding:14px}.card{background:#fff;border-radius:18px;padding:16px;margin-bottom:12px;box-shadow:0 2px 12px #0001}.hidden{display:none!important}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.stat{background:#f8fafc;border-radius:14px;padding:13px}.stat b{display:block;font-size:18px;margin-top:5px}.income{color:#047857}.expense{color:#b91c1c}.balance{font-size:30px;font-weight:800}label{display:block;font-weight:700;margin:9px 0 5px}input,textarea,select{width:100%;padding:12px;border:1px solid #d1d5db;border-radius:10px;background:#fff}textarea{min-height:80px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 4px;border-bottom:1px solid #e5e7eb;text-align:left}canvas{width:100%;height:270px;border:1px solid #e5e7eb;border-radius:12px}nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #ddd;display:flex;z-index:10;max-width:720px;margin:auto}nav button{flex:1;background:#fff;color:#6b7280;font-size:12px;padding:11px 3px}nav button.active{color:#111827}.toast{display:none;position:fixed;bottom:85px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;padding:11px 16px;border-radius:12px;z-index:20}@media(max-width:500px){.stats{grid-template-columns:1fr 1fr}.stat:last-child{grid-column:1/-1}}@media print{header,nav,.no-print,#lock{display:none!important}#app{display:block;padding:0}section.hidden{display:block!important}.card{box-shadow:none;border:1px solid #ddd}canvas{display:none}}
+</style>
+ </head>
+ <body>
+  <div id="lock">
+   <div class="lockbox">
+    <div style="font-size:42px">🔐</div>
+    <h1>My Money Diary</h1>
+    <p>Ingiza PIN kufungua app</p>
+    <input id="pinIn" type="password" inputmode="numeric" maxlength="6" placeholder="PIN">
+    <button class="primary" onclick="unlock()">Fungua</button>
+    <p id="err" style="color:#b91c1c;min-height:20px"></p>
+    <button class="small" onclick="forgotPin()">Umesahau PIN?</button>
+   </div>
+  </div>
+  <div id="app">
+   <header>
+    <h1>💰 My Money Diary</h1>
+    <small>Diary • Mapato • Matumizi</small>
+   </header>
+   <main>
+    <section id="home">
+     <div class="card">
+      <div style="color:#6b7280">Balance</div>
+      <div id="mb" class="balance">TZS 0</div>
+     </div>
+     <div class="stats">
+      <div class="stat">
+       Mapato mwezi<b id="mi" class="income">TZS 0</b>
+      </div>
+      <div class="stat">
+       Matumizi mwezi<b id="me" class="expense">TZS 0</b>
+      </div>
+      <div class="stat">
+       Entries<b id="mc">0</b>
+      </div>
+     </div>
+     <div class="card">
+      <h2>➕ Rekodi mpya</h2>
+      <label>Tarehe</label><input id="date" type="date">
+      <div class="grid">
+       <div>
+        <label>Mapato (TZS)</label><input id="income" type="number" min="0">
+       </div>
+       <div>
+        <label>Matumizi (TZS)</label><input id="expense" type="number" min="0">
+       </div>
+      </div>
+      <label>Kategoria</label><select id="category"><option>Chakula</option><option>Usafiri</option><option>Nyumba</option><option>Biashara</option><option>Elimu</option><option>Afya</option><option>Burudani</option><option>Mshahara</option><option>Nyingine</option></select><label>Maelezo / Diary</label><textarea id="note" placeholder="Andika maelezo..."></textarea>
+      <div class="actions">
+       <button class="primary" onclick="add()">Hifadhi rekodi</button>
+      </div>
+     </div>
+    </section>
+    <section id="records" class="hidden">
+     <div class="card">
+      <h2>📒 Rekodi</h2>
+      <label>Mwezi</label><input id="month" type="month" onchange="render()">
+      <div class="actions no-print">
+       <button class="small" onclick="csv()">📑 CSV</button>
+       <button class="small" onclick="pdf()">📄 PDF</button>
+       <button class="small" onclick="backup()">💾 Backup</button>
+       <label class="small" style="display:inline-block">♻️ Restore<input type="file" accept=".json" onchange="restore(event)" style="display:none"></label>
+      </div>
+     </div>
+     <div class="card">
+      <div style="overflow:auto">
+       <table>
+        <thead>
+         <tr>
+          <th>Tarehe</th>
+          <th>Kategoria</th>
+          <th>Mapato</th>
+          <th>Matumizi</th>
+          <th></th>
+         </tr>
+        </thead>
+        <tbody id="list"></tbody>
+       </table>
+      </div>
+      <p id="empty" style="text-align:center;color:#6b7280">Hakuna rekodi.</p>
+     </div>
+    </section>
+    <section id="reports" class="hidden">
+     <div class="card">
+      <h2>📊 Ripoti ya mwezi</h2>
+      <label>Mwezi</label><input id="reportMonth" type="month" onchange="render()">
+      <div class="stats" style="margin-top:10px">
+       <div class="stat">
+        Mapato<b id="ri" class="income">TZS 0</b>
+       </div>
+       <div class="stat">
+        Matumizi<b id="re" class="expense">TZS 0</b>
+       </div>
+       <div class="stat">
+        Balance<b id="rb">TZS 0</b>
+       </div>
+      </div>
+     </div>
+     <div class="card">
+      <h3>Mapato vs Matumizi</h3>
+      <canvas id="chart" width="700" height="300"></canvas>
+     </div>
+    </section>
+    <section id="settings" class="hidden">
+     <div class="card">
+      <h2>⚙️ Settings</h2>
+      <label>PIN mpya (4–6 digits)</label><input id="newPin" type="password" inputmode="numeric" maxlength="6">
+      <div class="actions">
+       <button class="primary" onclick="setPin()">🔐 Badilisha PIN</button>
+      </div>
+     </div>
+     <div class="card">
+      <h3>💾 Data</h3>
+      <p style="color:#6b7280">Backup huhifadhi data zote. CSV inaweza kufunguliwa Excel/Sheets.</p>
+      <div class="actions no-print">
+       <button class="small" onclick="backup()">Download Backup</button>
+       <button class="small" onclick="csv()">Download CSV</button>
+       <button class="small" onclick="pdf()">Save PDF</button>
+       <button class="danger" onclick="wipe()">🗑️ Futa data zote</button>
+      </div>
+     </div>
+    </section>
+   </main>
+   <nav>
+    <button class="active" onclick="tab('home',this)">🏠
+     <br>
+     Home</button>
+    <button onclick="tab('records',this)">📒
+     <br>
+     Rekodi</button>
+    <button onclick="tab('reports',this)">📊
+     <br>
+     Graph</button>
+    <button onclick="tab('settings',this)">⚙️
+     <br>
+     Settings</button>
+   </nav>
+  </div>
+  <div id="toast" class="toast"></div>
+  <script>
+const DK='my_money_diary_data_v3',PK='money_diary_pin_v3';let data=JSON.parse(localStorage.getItem(DK)||'[]');const $=id=>document.getElementById(id);const today=()=>new Date().toISOString().slice(0,10);const month=()=>today().slice(0,7);const money=n=>'TZS '+Number(n||0).toLocaleString('en-TZ');$('date').value=today();$('month').value=month();$('reportMonth').value=month();
+function save(){localStorage.setItem(DK,JSON.stringify(data))}function unlock(){let p=$('pinIn').value.trim(),correct=localStorage.getItem(PK)||'1234';if(p===correct){$('lock').style.display='none';$('app').style.display='block';$('err').textContent='';render()}else{$('err').textContent='PIN si sahihi.';$('pinIn').value=''}}$('pinIn').onkeydown=e=>{if(e.key==='Enter')unlock()};
+function forgotPin(){let x=prompt('Ili ku-reset PIN, data za app zitafutwa. Andika RESET kuthibitisha:');if(x==='RESET'){localStorage.removeItem(PK);localStorage.removeItem(DK);data=[];alert('PIN ime-reset. PIN mpya ni 1234.');}else if(x!==null)alert('Haijafanyika.');}
+function setPin(){let x=$('newPin').value.trim();if(!/^\d{4,6}$/.test(x))return alert('PIN lazima iwe digits 4 hadi 6.');localStorage.setItem(PK,x);$('newPin').value='';alert('PIN imebadilishwa kikamilifu.')}
+function add(){let i=+($('income').value||0),e=+($('expense').value||0);if(!i&&!e)return alert('Weka kiasi cha mapato au matumizi.');data.push({id:Date.now()+Math.random(),date:$('date').value||today(),income:i,expense:e,category:$('category').value,note:$('note').value.trim()});save();$('income').value='';$('expense').value='';$('note').value='';render();toast('Rekodi imehifadhiwa ✅')}
+function tab(id,b){['home','records','reports','settings'].forEach(x=>$(x).classList.add('hidden'));$(id).classList.remove('hidden');document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');render()}
+function filtered(m){return data.filter(x=>x.date.slice(0,7)===m)}function render(){let m=$('month').value||month(),rm=$('reportMonth').value||month(),hd=filtered(month()),mi=hd.reduce((a,x)=>a+x.income,0),me=hd.reduce((a,x)=>a+x.expense,0);$('mb').textContent=money(data.reduce((a,x)=>a+x.income-x.expense,0));$('mi').textContent=money(mi);$('me').textContent=money(me);$('mc').textContent=hd.length;let rows=filtered(m).sort((a,b)=>b.date.localeCompare(a.date));$('list').innerHTML=rows.map(x=>`<tr><td>${esc(x.date)}</td><td>${esc(x.category)}</td><td class="income">${x.income?money(x.income):'—'}</td><td class="expense">${x.expense?money(x.expense):'—'}</td><td><button class="danger" onclick="del(${x.id})">×</button></td></tr>`).join('');$('empty').style.display=rows.length?'none':'block';let rd=filtered(rm),ri=rd.reduce((a,x)=>a+x.income,0),re=rd.reduce((a,x)=>a+x.expense,0);$('ri').textContent=money(ri);$('re').textContent=money(re);$('rb').textContent=money(ri-re);draw(rd)}
+function del(id){if(confirm('Futa rekodi hii?')){data=data.filter(x=>x.id!==id);save();render()}}function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function draw(rows){let c=$('chart'),ctx=c.getContext('2d'),w=c.width=c.clientWidth*2,h=c.height=300;ctx.clearRect(0,0,w,h);let d={};rows.forEach(x=>{d[x.date]??={i:0,e:0};d[x.date].i+=x.income;d[x.date].e+=x.expense});let ks=Object.keys(d).sort();if(!ks.length){ctx.font='22px Arial';ctx.fillText('Hakuna data ya graph mwezi huu.',20,55);return}let max=Math.max(1,...ks.map(k=>Math.max(d[k].i,d[k].e))),L=65,B=55,T=45,R=15,cw=(w-L-R)/ks.length;ctx.strokeStyle='#ccc';ctx.beginPath();ctx.moveTo(L,T);ctx.lineTo(L,h-B);ctx.lineTo(w-R,h-B);ctx.stroke();ks.forEach((k,j)=>{let x=L+j*cw+cw/2,hi=d[k].i/max*(h-T-B),he=d[k].e/max*(h-T-B);ctx.fillStyle='#047857';ctx.fillRect(x-17,h-B-hi,14,hi);ctx.fillStyle='#b91c1c';ctx.fillRect(x+3,h-B-he,14,he);ctx.fillStyle='#111827';ctx.font='17px Arial';ctx.fillText(k.slice(8),x-10,h-18)});ctx.fillStyle='#047857';ctx.fillRect(15,18,14,14);ctx.fillStyle='#111827';ctx.font='18px Arial';ctx.fillText('Mapato',35,31);ctx.fillStyle='#b91c1c';ctx.fillRect(105,18,14,14);ctx.fillStyle='#111827';ctx.fillText('Matumizi',125,31)}
+function dl(blob,name){let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}function backup(){dl(new Blob([JSON.stringify({app:'My Money Diary',version:3,createdAt:new Date().toISOString(),data},null,2)],{type:'application/json'}),'money-diary-backup.json');toast('Backup imetengenezwa 💾')}function restore(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let z=JSON.parse(r.result),x=Array.isArray(z)?z:z.data;if(!Array.isArray(x))throw 0;if(confirm('Ongeza backup kwenye data zilizopo?')){data=data.concat(x);save();render();toast('Data zimerejeshwa ♻️')}}catch(q){alert('Backup file si sahihi.')}e.target.value=''};r.readAsText(f)}function csv(){let s='Tarehe,Kategoria,Mapato,Matumizi,Maelezo\n';data.forEach(x=>{let q=v=>'"'+String(v??'').replaceAll('"','""')+'"';s+=q(x.date)+','+q(x.category)+','+x.income+','+x.expense+','+q(x.note)+'\n'});dl(new Blob(['\ufeff'+s],{type:'text/csv;charset=utf-8'}),'money-diary.csv');toast('CSV imetengenezwa 📑')}function pdf(){window.print()}function wipe(){if(confirm('Futa data ZOTE?')){data=[];save();render();toast('Data zimefutwa.')}}function toast(x){let t=$('toast');t.textContent=x;t.style.display='block';setTimeout(()=>t.style.display='none',2200)}
+</script>
+ </body>
+</html>
