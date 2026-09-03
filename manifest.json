@@ -1,1 +1,1 @@
-{"name":"My Money Diary","short_name":"Money Diary","start_url":"./index.html","display":"standalone","background_color":"#f7f9fc","theme_color":"#123f6b","icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}
+{"name":"My Money Diary","short_name":"Money Diary","start_url":"./index.html","display":"standalone","background_color":"#f3f4f6","theme_color":"#111827","icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml"}]}
